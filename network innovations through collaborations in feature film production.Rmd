@@ -56,7 +56,8 @@ for(i in 1:nrow(filmname)){
 ```
 
 ```{r}
-# 1-B. identify new words and combination (innovation measure)
+# 1-B. innovation measure
+## identify new words and combination
 data2<-unique(merge(data2,data1[,c(1,2,8)],by='pindex',all=F))
 data2$new<-0
 index<-data.frame(unique(data2$keyword_index))
@@ -72,17 +73,17 @@ for(i in 1:nrow(index)){
 ```
 
 ```{r}
-## 1.
+## count
 c<-grep("-", data2$keyword)
 comb<-data2[c,]
 new<-data2[-c,]
-## count new words
+### count new words
 count_new<-aggregate(x=new$new, by = list(new$year, new$film_type), FUN=sum)
 count_new1<-aggregate(x=count_new$x,by = list(count_new$Group.1), FUN=mean)
 p_new<-ggplot(data=count_new1,aes(x=Group.1,y=x))+geom_line()
 print(p_new)          
 
-## count new combinations
+### count new combinations
 count_comb<-aggregate(x=comb$new, by = list(comb$year, comb$film_type), FUN=sum)
 count_comb1<-aggregate(x=count_comb$x,by = list(count_comb$Group.1), FUN=mean)
 p_comb<-ggplot(data=count_comb1,aes(x=Group.1,y=x))+geom_line()
@@ -90,7 +91,7 @@ print(p_comb)
 ```
 
 ```{r}
-### 1.
+### 2.
 ## regression on new words
 regression<-aggregate(x=new$new,by = list(new$year,new$pindex),sum)
 colnames(regression)<-c('year','pindex','new_words')

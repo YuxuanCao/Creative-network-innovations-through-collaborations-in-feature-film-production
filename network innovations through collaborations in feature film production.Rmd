@@ -71,7 +71,7 @@ for(i in 1:nrow(index)){
 ```
 
 ```{r}
-## Q1----A
+## 1.
 c<-grep("-", data2$keyword)
 comb<-data2[c,]
 new<-data2[-c,]
@@ -89,7 +89,7 @@ print(p_comb)
 ```
 
 ```{r}
-### Q1---B
+### 1.
 ## regression on new words
 regression<-aggregate(x=new$new,by = list(new$year,new$pindex),sum)
 colnames(regression)<-c('year','pindex','new_words')
@@ -206,7 +206,7 @@ print(summary(r_newcombQ1))
 ```
 
 ```{r}
-#Q2
+#2.
 ##Plot relationship between number of new words and average Jaccard distance
 g1<-ggplot(regression1, aes(avg_dist, new_words)) + geom_smooth(method= "loess", se = T) + labs(x = "Average Jaccard distance", y = "New keywords")
 print(g1)
@@ -219,7 +219,7 @@ print(g2)
 ```
 
 ```{r}
-## Q3
+## 3.
 # calculate yearly return as its yearly box office revenue divided by the total release coverage it invested in for that year for its films.
 coverage<-na.omit(merge(data1[,c(1,2,4)],data3[,c(3,4)],by='pindex',all.x = TRUE))  
 coverage<-aggregate(coverage$release_coverage,by=list(coverage$year,coverage$pcindex),sum)
@@ -271,7 +271,7 @@ print(summary(r_Q4_newcomb))
 ```
 
 ```{r}
-#Q4--B
+#4.
 ## how introducing new keywords  of existing keywords result in higher box office returns
 r_Q4_word<-lm(std_return~new_words+type3 + type4 + type5 + c1 + c2 + box_revenue + operation + subsidiary + factor(year), regression2)
 print(summary(r_Q4_word))

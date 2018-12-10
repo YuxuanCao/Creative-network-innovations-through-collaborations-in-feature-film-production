@@ -91,7 +91,7 @@ print(p_comb)
 ```
 
 ```{r}
-### 2.
+### 2. Relationship between innovation level and collaboration type
 ## regression on new words
 regression<-aggregate(x=new$new,by = list(new$year,new$pindex),sum)
 colnames(regression)<-c('year','pindex','new_words')

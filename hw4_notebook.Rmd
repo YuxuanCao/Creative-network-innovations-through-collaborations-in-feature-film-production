@@ -1,0 +1,284 @@
+```{r}
+rm(list = ls(all = TRUE))
+library(igraph)
+library(plm)
+library(ggplot2)
+library(data.table)
+```
+
+```{r}
+## prepare data
+data1<-read.csv("E:/Fall term/Social Network Analysis/HW4/producers_and_films.csv",header = TRUE)
+data2<-read.csv("E:/Fall term/Social Network Analysis/HW4/film_keywords.csv",header = TRUE)
+data3<-read.csv("E:/Fall term/Social Network Analysis/HW4/box_office_revenues.csv",header = TRUE)
+data4<-read.csv("E:/Fall term/Social Network Analysis/HW4/production_subsidiaries.csv",header = TRUE)
+
+
+## only use US data and clean data
+data1<-data1[data1$country=='us',]
+data1<-unique(data1)
+data1<-na.omit(data1)
+## classify producer to be specialist or generalist
+data1$type<-0
+producer<-data.frame(unique(data1$pcindex))
+for(i in 1:nrow(producer)){
+  a<-data1[data1$pcindex==producer[i,1],]
+  year<-data.frame(unique(a$year))
+  for(j in 1:nrow(year)){
+    if(nrow(a[a$year==year[j,1],])>1){
+      data1[data1$pcindex==producer[i,1]&data1$year==year[j,1],7]<-'generalist'
+    }else{
+      data1[data1$pcindex==producer[i,1]&data1$year==year[j,1],7]<-'specialist'
+    }
+  }
+}
+```
+
+```{r}
+# classify film type
+data1$film_type<-0
+filmname<-data.frame(unique(data1$pindex))
+for(i in 1:nrow(filmname)){
+  a<-data1[data1$pindex==filmname[i,1],]
+  if(nrow(a)==1){
+    if(a$type=='generalist'){
+      data1[data1$pindex==filmname[i,1],8]<-2
+      }else{data1[data1$pindex==filmname[i,1],8]<-1}
+  }else if(nrow(a[a$type=='specialist',])==nrow(a)){
+    data1[data1$pindex==filmname[i,1],8]<-4
+  }else if(nrow(a[a$type=='generalist',])==nrow(a)){
+    data1[data1$pindex==filmname[i,1],8]<-3
+  }else{
+    data1[data1$pindex==filmname[i,1],8]<-5
+  }
+}
+```
+
+```{r}
+# identify new words and combination
+data2<-unique(merge(data2,data1[,c(1,2,8)],by='pindex',all=F))
+data2$new<-0
+index<-data.frame(unique(data2$keyword_index))
+for(i in 1:nrow(index)){
+  a<-data2[data2$keyword_index==index[i,1],]
+  year<-data.frame(unique(a$year))
+  for(j in 1:nrow(year)){
+    if(nrow(a[a$year<(year[j,1]-3),])==0){
+      data2[data2$keyword_index==index[i,1]&data2$year==year[j,1],6]<-1
+    }
+  }
+}
+```
+
+```{r}
+## Q1----A
+c<-grep("-", data2$keyword)
+comb<-data2[c,]
+new<-data2[-c,]
+## count new words
+count_new<-aggregate(x=new$new, by = list(new$year, new$film_type), FUN=sum)
+count_new1<-aggregate(x=count_new$x,by = list(count_new$Group.1), FUN=mean)
+p_new<-ggplot(data=count_new1,aes(x=Group.1,y=x))+geom_line()
+print(p_new)          
+
+## count new combinations
+count_comb<-aggregate(x=comb$new, by = list(comb$year, comb$film_type), FUN=sum)
+count_comb1<-aggregate(x=count_comb$x,by = list(count_comb$Group.1), FUN=mean)
+p_comb<-ggplot(data=count_comb1,aes(x=Group.1,y=x))+geom_line()
+print(p_comb)  
+```
+
+```{r}
+### Q1---B
+## regression on new words
+regression<-aggregate(x=new$new,by = list(new$year,new$pindex),sum)
+colnames(regression)<-c('year','pindex','new_words')
+regression1<-merge(data1[,c(1,2,4,7,8)],regression[,c(2,3)],by ='pindex',all.x = TRUE)
+regression1<-na.omit(regression1)
+regression1<-aggregate(regression1$new_words,by=list(regression1$year,regression1$pcindex),sum)
+colnames(regression1)<-c('year','pcindex','new_words')
+
+## add the number of new combination of words
+regression<-aggregate(x=comb$new,by = list(comb$year,comb$pindex),sum)
+colnames(regression)<-c('year','pindex','new_comb')
+regression2<-merge(data1[,c(1,2,4,7,8)],regression[,c(2,3)],by ='pindex',all.x = TRUE)
+regression2<-na.omit(regression2)
+regression2<-aggregate(regression2$new_comb,by=list(regression2$year,regression2$pcindex),sum)
+colnames(regression2)<-c('year','pcindex','new_comb')
+
+regression1<-merge(regression1,regression2,by=c('year','pcindex'),all.x=TRUE)
+regression1[is.na(regression1)]<-0
+
+## calculate the number of films a producer makes that year that fall into each of the three co-production types
+sum<-aggregate(x=data1$film_type,by=list(data1$year,data1$pcindex,data1$film_type),length)
+colnames(sum)<-c('year','pcindex','type','count_type')
+regression1<-merge(regression1,sum[sum$type==1,c(1,2,4)],by=c('year','pcindex'),all.x = TRUE)
+regression1<-merge(regression1,sum[sum$type==2,c(1,2,4)],by=c('year','pcindex'),all.x = TRUE)
+regression1<-merge(regression1,sum[sum$type==3,c(1,2,4)],by=c('year','pcindex'),all.x = TRUE)
+regression1<-merge(regression1,sum[sum$type==4,c(1,2,4)],by=c('year','pcindex'),all.x = TRUE)
+regression1<-merge(regression1,sum[sum$type==5,c(1,2,4)],by=c('year','pcindex'),all.x = TRUE)
+colnames(regression1)<-c('year','pcindex','new_words','new_comb','type1','type2','type3','type4','type5')
+regression1[is.na(regression1)]<-0
+
+## calculate total films made that year(for which there is keyword information)
+regression1$sum<-regression1$type1+regression1$type2+regression1$type3+regression1$type4+regression1$type5
+sum<-aggregate(regression1$sum,by=list(regression1$year),sum)
+colnames(sum)<-c('year','total_film')
+regression1<-merge(regression1,sum,by='year',all.x = TRUE)
+
+## calculate total box office return for each producer in each year
+box_revenue<-na.omit(merge(data1[,c(1,2,4)],data3[,c(1,4)],by='pindex',all.x = TRUE))  
+box_revenue<-aggregate(box_revenue$total_box,by=list(box_revenue$year,box_revenue$pcindex),sum)
+colnames(box_revenue)<-c('year','pcindex','box_revenue')
+regression1<-merge(regression1,box_revenue,by=c('year','pcindex'),all.x = TRUE)
+regression1<-na.omit(regression1[,c(1,2,3,4,7,8,9,11,12)])
+
+## calculate operation year for each producer
+regression1$operation<-0
+for(i in 1:nrow(regression1)){
+  a<-regression1[regression1$pcindex==regression1[i,2],c(1,2)]
+  regression1[i,10]<-regression1[i,1]-min(a[,1])
+}
+
+# calculate if it's subsidiary in that year, 1---is subsidiary
+data4[,1]<-as.character(data4[,1])
+regression1$subsidiary<-0
+for(i in 1:nrow(data4)){
+  if(nrow(regression1[regression1$pcindex==data4[i,1],])>0){
+   k<-which(regression1$pcindex==data4[i,1]&regression1$year<=data4[i,3]&regression1$year>=data4[i,2])
+   regression1[k,11]<-1  
+  }
+}
+
+# multidimensional scaling for each producer in each year
+## build affiliation matrix to calculate Jaccard distance for each producer in each year(together with average Jaccard Distance for Question 2)
+regression1$c1<-0
+regression1$c2<-0
+regression1$avg_dist<-0
+
+library(proxy)
+edgelist<-merge(data2[,c(1,3,4)],data1[,c(1,4)],by='pindex',all=TRUE)
+edgelist<-na.omit(edgelist)
+for(i in 1985:1986){
+a<-edgelist[edgelist$year==i,c(4,2)]
+a<-a[a$pcindex %in% regression1[regression1$year==i,2],]
+g<-graph.data.frame(a, directed=TRUE)
+V(g)$type <- bipartite_mapping(g)$type
+bipartite_matrix <- data.frame(as_incidence_matrix(g))
+#bipartite_matrix[which(bipartite_matrix>0)]<-1
+dis<-as.matrix(dist(bipartite_matrix,'Jaccard'))
+scaling<-cmdscale(dis,2)
+name<-rownames(scaling)
+c<-rowSums(dis)/(nrow(dis)-1)
+for(j in 1:nrow(scaling)){
+    regression1[which(regression1$year==i& regression1$pcindex==name[j]),c(12,13)]<-scaling[j,]
+    regression1[which(regression1$year==i& regression1$pcindex==name[j]),14]<-c[j]
+  }
+}
+for(i in 1987:2016){
+a<-edgelist[edgelist$year %in% c(i-2,i-1,i),c(4,2)]
+a<-a[a$pcindex %in% regression1[regression1$year==i,2],]
+g<-graph.data.frame(a, directed=TRUE)
+V(g)$type <- bipartite_mapping(g)$type
+bipartite_matrix <- data.frame(as_incidence_matrix(g))
+#bipartite_matrix[which(bipartite_matrix>0)]<-1
+dis<-as.matrix(dist(bipartite_matrix,'Jaccard'))
+scaling<-cmdscale(dis,2)
+name<-rownames(scaling)
+c<-rowSums(dis)/(nrow(dis)-1)
+for(j in 1:nrow(scaling)){
+    regression1[which(regression1$year==i& regression1$pcindex==name[j]),c(12,13)]<-scaling[j,]
+    regression1[which(regression1$year==i& regression1$pcindex==name[j]),14]<-c[j]
+  }
+}
+
+#regression1<-regression1[regression1$year>1987,]
+##estimate regression predicting the number of new keywords
+library(MASS)
+r_newwordsQ1<-glm.nb(new_words ~type3 + type4 + type5 + c1 + c2 + box_revenue + operation + subsidiary + factor(year), regression1, offset(total_film))
+print(summary(r_newwordsQ1))
+##estimate regression predicting the number of new combinations
+r_newcombQ1<-glm.nb(new_comb ~type3 + type4 + type5 + c1 + c2 + box_revenue + operation + subsidiary + factor(year), regression1, offset(total_film))
+print(summary(r_newcombQ1))
+
+##Yes, collaborations do have effect on innovation of the producer. According to the result from regression we could tell that type3(Central co-productions) and type5(Hybrid co-productions) are positively related to innovation(negative coefficients), while type4(Peripheral co-productions) is negatively related(negative coefficient). 
+##Type 3(Central co-productions) seems to result in the most new keywords and new combinations.
+```
+
+```{r}
+#Q2
+##Plot relationship between number of new words and average Jaccard distance
+g1<-ggplot(regression1, aes(avg_dist, new_words)) + geom_smooth(method= "loess", se = T) + labs(x = "Average Jaccard distance", y = "New keywords")
+print(g1)
+##Plot relationship between number of new combinations and average Jaccard distance
+g2<-ggplot(regression1, aes(avg_dist, new_comb)) + geom_smooth(method= "loess", se = T) + labs(x = "Average Jaccard distance", y = "New combinations")
+print(g2)
+
+## 
+#The plot shows that smaller the average Jaccard distance is, more new words or combinations the producer have.
+```
+
+```{r}
+## Q3
+# calculate yearly return as its yearly box office revenue divided by the total release coverage it invested in for that year for its films.
+coverage<-na.omit(merge(data1[,c(1,2,4)],data3[,c(3,4)],by='pindex',all.x = TRUE))  
+coverage<-aggregate(coverage$release_coverage,by=list(coverage$year,coverage$pcindex),sum)
+colnames(coverage)<-c('year','pcindex','coverage')
+regression1<-merge(regression1,coverage,by=c('year','pcindex'),all.x = TRUE)
+regression2<-regression1[regression1$coverage!=0,]
+regression2$yearly_return<-regression2$box_revenue/regression2$coverage
+
+# calculate standardized return according to formula given in question
+mean<-data.frame(aggregate(regression2$coverage,by = list(regression2$year),mean))
+mean[,c(3,4)]<-aggregate(regression2$coverage,by = list(regression2$year),sd)
+regression2<-merge(regression2,mean[,c(1,2,4)],by.x = 'year',by.y = 'Group.1',all = TRUE)
+regression2$std_return<-(regression2$yearly_return-regression2$x)/regression2$x.1
+r_Q3<-lm(std_return~type3 + type4 + type5 + c1 + c2 + box_revenue + operation + subsidiary + factor(year), regression2)
+print(summary(r_Q3))
+## The result suggests that collaborations do influence a production company's financial returns. From the coefficient we could see that collaboration have negative effect on producer's return.
+```
+
+```{r warning=FALSE}
+## calculate the count of new keywords and combinations introduced in a producer's solo produced films
+count<-data.frame(aggregate(x=new$new,by = list(new$year,new$pindex,new$film_type),sum))
+colnames(count)<-c('year','pindex','film_type','new_words')
+regression_Q4<-merge(data1[,c(1,2,4,8)],count[,c(2,4)],by ='pindex',all.x = TRUE)
+regression_Q4<-na.omit(regression_Q4)
+regression_Q4<-data.frame(aggregate(regression_Q4$new_words,by=list(regression_Q4$year,regression_Q4$pcindex,regression_Q4$film_type),sum))
+colnames(regression_Q4)<-c('year','pcindex','type','type1_newwords')
+regression1<-merge(regression1,regression_Q4[regression_Q4$type==c(1,2),c(1,2,4)],by=c('year','pcindex'),all.x=TRUE)
+#regression1<-regression1[is.na(regression1$)]<-0
+
+## calculate the count of new keywords and combinations introduced in a producer's solo produced films
+count<-data.frame(aggregate(x=comb$new,by = list(comb$year,comb$pindex,comb$film_type),sum))
+colnames(count)<-c('year','pindex','film_type','new_comb')
+regression_Q4<-merge(data1[,c(1,2,4,8)],count[,c(2,4)],by ='pindex',all.x = TRUE)
+regression_Q4<-na.omit(regression_Q4)
+regression_Q4<-data.frame(aggregate(regression_Q4$new_comb,by=list(regression_Q4$year,regression_Q4$pcindex,regression_Q4$film_type),sum))
+colnames(regression_Q4)<-c('year','pcindex','type','type1_newcomb')
+regression1<-merge(regression1,regression_Q4[regression_Q4$type==c(1,2),c(1,2,4)],by=c('year','pcindex'),all.x=TRUE)
+
+
+regression1[is.na(regression1[,15]),15]<-0
+regression1[is.na(regression1[,16]),16]<-0
+regression1$new_words_col<-regression1$new_words-regression1$type1_newwords
+regression1$new_comb_col<-regression1$new_comb-regression1$type1_newcomb
+r_Q4_newword<-glm.nb(type1_newwords ~type3+type4+type5+c1 + c2 + box_revenue + operation + subsidiary + factor(year) + new_words_col, regression1,offset(total_film))
+print(summary(r_Q4_newword))
+r_Q4_newcomb<-glm.nb(type1_newcomb ~ type3+type4+type5+c1 + c2 + box_revenue + operation + subsidiary + factor(year) + new_comb_col, regression1, offset(total_film))
+print(summary(r_Q4_newcomb))
+
+```
+
+```{r}
+#Q4--B
+## how introducing new keywords  of existing keywords result in higher box office returns
+r_Q4_word<-lm(std_return~new_words+type3 + type4 + type5 + c1 + c2 + box_revenue + operation + subsidiary + factor(year), regression2)
+print(summary(r_Q4_word))
+## how introducing new combinations of existing keywords result in higher box office returns
+r_Q4_comb<-lm(std_return~new_comb+type3 + type4 + type5 + c1 + c2 + box_revenue + operation + subsidiary + factor(year), regression2)
+print(summary(r_Q4_comb))
+
+##No, it doesn't. We could see from the result that the coefficients of new words and combinations in two regression are negative. 
+```
+

@@ -35,7 +35,8 @@ for(i in 1:nrow(producer)){
 ```
 
 ```{r}
-# classify film type
+# 1. Innovation Measurement and Co-production Types
+## 1-A. classify film type
 data1$film_type<-0
 filmname<-data.frame(unique(data1$pindex))
 for(i in 1:nrow(filmname)){
@@ -55,7 +56,7 @@ for(i in 1:nrow(filmname)){
 ```
 
 ```{r}
-# identify new words and combination
+# 1-B. identify new words and combination (innovation measure)
 data2<-unique(merge(data2,data1[,c(1,2,8)],by='pindex',all=F))
 data2$new<-0
 index<-data.frame(unique(data2$keyword_index))

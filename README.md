@@ -6,9 +6,15 @@ This analysis is about production companies of feature films and the films that 
 * the number of new, never-before-seen keywords that are used in a film
 * the number of new combinations of existing keywords that are used in a film
 
-(To account for the natural time cycle of the production process, consider a keyword or combination to be “new” if it has been introduced within the last three years)
+ ( To account for the natural time cycle of the production process, consider a keyword or combination to be “new” if it has been introduced within the last three years)
 ### Co-production types
+* i.   Peripheral solo productions: films made by a single specialist
+* ii.  Central solo productions: films made by a single generalist
+* iii. Central co-productions: films made by a group of multiple generalists
+* iv.  Peripheral co-productions: films made by a group of multiple specialists
+* v.   Hybrid co-productions: films made by a group of generalists and specialists
 
+ ( A producer will be classified as a generalist if it makes more than one film in a year.)
 ## 2. Relationship between innovation level and collaboration type
 ## 3. Visually relationship between Jaccard distance and innovation
 ## 4. Relationship between production company’s financial returns and collaboration type

@@ -208,7 +208,7 @@ print(summary(r_newcombQ1))
 ```
 
 ```{r}
-#2.
+# 3. Visually relationship between Jaccard distance and innovation
 ##Plot relationship between number of new words and average Jaccard distance
 g1<-ggplot(regression1, aes(avg_dist, new_words)) + geom_smooth(method= "loess", se = T) + labs(x = "Average Jaccard distance", y = "New keywords")
 print(g1)
@@ -221,7 +221,7 @@ print(g2)
 ```
 
 ```{r}
-## 3.
+## 4. Relationship between production company’s financial returns and collaboration type
 # calculate yearly return as its yearly box office revenue divided by the total release coverage it invested in for that year for its films.
 coverage<-na.omit(merge(data1[,c(1,2,4)],data3[,c(3,4)],by='pindex',all.x = TRUE))  
 coverage<-aggregate(coverage$release_coverage,by=list(coverage$year,coverage$pcindex),sum)

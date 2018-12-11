@@ -221,8 +221,8 @@ print(g2)
 ```
 
 ```{r}
-## 4. Relationship between production company’s financial returns and collaboration type
-# calculate yearly return as its yearly box office revenue divided by the total release coverage it invested in for that year for its films.
+# 4. Relationship between production company’s financial returns and collaboration type
+## calculate yearly return as its yearly box office revenue divided by the total release coverage it invested in for that year for its films.
 coverage<-na.omit(merge(data1[,c(1,2,4)],data3[,c(3,4)],by='pindex',all.x = TRUE))  
 coverage<-aggregate(coverage$release_coverage,by=list(coverage$year,coverage$pcindex),sum)
 colnames(coverage)<-c('year','pcindex','coverage')
@@ -230,7 +230,7 @@ regression1<-merge(regression1,coverage,by=c('year','pcindex'),all.x = TRUE)
 regression2<-regression1[regression1$coverage!=0,]
 regression2$yearly_return<-regression2$box_revenue/regression2$coverage
 
-# calculate standardized return according to formula given in question
+## calculate standardized return according to formula given in question
 mean<-data.frame(aggregate(regression2$coverage,by = list(regression2$year),mean))
 mean[,c(3,4)]<-aggregate(regression2$coverage,by = list(regression2$year),sd)
 regression2<-merge(regression2,mean[,c(1,2,4)],by.x = 'year',by.y = 'Group.1',all = TRUE)
@@ -241,6 +241,7 @@ print(summary(r_Q3))
 ```
 
 ```{r warning=FALSE}
+# 5. Do producers gain anything from these collaborations creatively in the long term
 ## calculate the count of new keywords and combinations introduced in a producer's solo produced films
 count<-data.frame(aggregate(x=new$new,by = list(new$year,new$pindex,new$film_type),sum))
 colnames(count)<-c('year','pindex','film_type','new_words')
@@ -273,7 +274,7 @@ print(summary(r_Q4_newcomb))
 ```
 
 ```{r}
-#4.
+# 6. Do producers gain anything from these collaborations creatively in the long term
 ## how introducing new keywords  of existing keywords result in higher box office returns
 r_Q4_word<-lm(std_return~new_words+type3 + type4 + type5 + c1 + c2 + box_revenue + operation + subsidiary + factor(year), regression2)
 print(summary(r_Q4_word))

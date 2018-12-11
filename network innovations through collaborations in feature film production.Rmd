@@ -274,7 +274,7 @@ print(summary(r_Q4_newcomb))
 ```
 
 ```{r}
-# 6. Do producers gain anything from these collaborations creatively in the long term
+# 6. Why producers might engage in collaborations, even though hey can be financially risky
 ## how introducing new keywords  of existing keywords result in higher box office returns
 r_Q4_word<-lm(std_return~new_words+type3 + type4 + type5 + c1 + c2 + box_revenue + operation + subsidiary + factor(year), regression2)
 print(summary(r_Q4_word))

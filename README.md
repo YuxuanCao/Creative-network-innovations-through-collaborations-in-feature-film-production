@@ -6,6 +6,6 @@ able to adapt so effectively to new filmmaking technologies and audience interes
 
 ## 1. Innovation Measurement and Co-production Types
 ## 2. Relationship between innovation level and collaboration type
-##
-##
+## 3.  Relationship between production company’s financial returns and collaboration type
+## 4. 
 ##
